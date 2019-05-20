@@ -3,16 +3,53 @@ defmodule Rpn do
   Documentation for Rpn.
   """
 
+  defp eval(ast) do
+    {result, _bindings} = Code.eval_quoted(ast)
+    result
+  end
+
+  defp gen_ast(operator, a, b) do
+    operator = if operator == :x, do: :*, else: operator
+    {operator, [context: Elixir, import: Kernel], [b, a]}
+  end
+
+  defp calc(e, mem) when is_atom(e) do
+    {[n1, n2], rest} = mem |> Map.get(:elements) |> Enum.split(2)
+    mem |> Map.put(:elements, [eval(gen_ast(e, n1, n2)) | rest])
+  end
+
+  defp calc(e, mem) do
+    mem |> Map.update!(:elements, &([e | &1]))
+  end
+
+  use GenServer
+
   @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Rpn.hello
-      :world
-
+  Starts the registry.
   """
-  def hello do
-    :world
+  def start(opts \\ []) do
+    GenServer.start_link(__MODULE__, :ok, opts)
+  end
+
+  def peek(server) do
+    GenServer.call(server, {:peek})
+  end
+
+  def push(server, element) do
+    GenServer.cast(server, {:push, element})
+  end
+
+  ## Server Callbacks
+
+  def init(:ok) do
+    {:ok, %{operators: [], elements: []}}
+  end
+
+  def handle_call({:peek}, _from, mem) do
+    {:reply, Map.get(mem, :elements), mem}
+  end
+
+  def handle_cast({:push, e}, mem) do
+    {:noreply, calc(e, mem)}
   end
 end
