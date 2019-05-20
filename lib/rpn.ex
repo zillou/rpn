@@ -14,12 +14,12 @@ defmodule Rpn do
   end
 
   defp calc(e, mem) when is_atom(e) do
-    {[n1, n2], rest} = mem |> Map.get(:elements) |> Enum.split(2)
-    mem |> Map.put(:elements, [eval(gen_ast(e, n1, n2)) | rest])
+    {[n1, n2], rest} = mem |> Enum.split(2)
+    [eval(gen_ast(e, n1, n2)) | rest]
   end
 
   defp calc(e, mem) do
-    mem |> Map.update!(:elements, &([e | &1]))
+    [e | mem]
   end
 
   use GenServer
@@ -42,11 +42,11 @@ defmodule Rpn do
   ## Server Callbacks
 
   def init(:ok) do
-    {:ok, %{operators: [], elements: []}}
+    {:ok, []}
   end
 
   def handle_call({:peek}, _from, mem) do
-    {:reply, Map.get(mem, :elements), mem}
+    {:reply, mem, mem}
   end
 
   def handle_cast({:push, e}, mem) do
