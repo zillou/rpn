@@ -14,7 +14,7 @@ defmodule Rpn do
   end
 
   defp calc(e, mem) when is_atom(e) do
-    {[n1, n2], rest} = mem |> Enum.split(2)
+    [n1, n2 | rest] = mem
     [eval(gen_ast(e, n1, n2)) | rest]
   end
 
