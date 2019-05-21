@@ -8,9 +8,35 @@ defmodule Rpn do
     result
   end
 
+  @op_alias %{
+    x: {:*, :kernel},
+    "**": {:pow, :math}
+  }
+
   defp gen_ast(operator, a, b) do
-    operator = if operator == :x, do: :*, else: operator
-    {operator, [context: Elixir, import: Kernel], [b, a]}
+    cond do
+      Map.has_key?(@op_alias, operator) ->
+        {op, namespace} = @op_alias[operator]
+        ast(namespace, op, a, b)
+      :erlang.function_exported(:math, operator, 2) ->
+        ast(:math, operator, a, b)
+      :erlang.function_exported(Kernel, operator, 2) ->
+        ast(:kernel, operator, a, b)
+      true ->
+        raise UndefinedFunctionError, message: "operator #{operator}/2 is not supported"
+    end
+  end
+
+  defp ast(:kernel, operator, a, b) do
+	{operator, [context: Elixir, import: Kernel], [b, a]}
+  end
+
+  defp ast(:math, operator, a, b) do
+	{{:., [], [:math, operator]}, [], [b, a]}
+  end
+
+  defp calc(e, mem) when is_atom(e) and length(mem) < 2 do
+    raise UndefinedFunctionError, message: "operator #{e}/1 is not supported"
   end
 
   defp calc(e, mem) when is_atom(e) do
