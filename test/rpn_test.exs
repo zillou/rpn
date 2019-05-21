@@ -22,6 +22,20 @@ defmodule RpnTest do
     assert Rpn.peek(pid) == [6]
   end
 
+  test "pow" do
+    {:ok, pid} = Rpn.start
+    Rpn.push(pid, 3)
+    Rpn.push(pid, 2)
+    Rpn.push(pid, :^)
+    # 3 ^ 2 = 9
+    assert Rpn.peek(pid) == [9]
+
+    Rpn.push(pid, 2)
+    Rpn.push(pid, :"**")
+    # 9 ^ 2 = 81
+    assert Rpn.peek(pid) == [81]
+  end
+
   test "wikipedia example" do
     {:ok, pid} = Rpn.start
     Rpn.push(pid, 5)

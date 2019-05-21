@@ -10,7 +10,8 @@ defmodule Rpn do
 
   @op_alias %{
     x: {:*, :kernel},
-    "**": {:pow, :math}
+    "**": {:pow, :math},
+    ^: {:pow, :math}
   }
 
   defp gen_ast(operator, a, b) do
