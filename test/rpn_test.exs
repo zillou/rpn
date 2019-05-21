@@ -22,6 +22,20 @@ defmodule RpnTest do
     assert Rpn.peek(pid) == [6]
   end
 
+  test "pow" do
+    {:ok, pid} = Rpn.start
+    Rpn.push(pid, 3)
+    Rpn.push(pid, 2)
+    Rpn.push(pid, :^)
+    # 3 ^ 2 = 9
+    assert Rpn.peek(pid) == [9]
+
+    Rpn.push(pid, 2)
+    Rpn.push(pid, :"**")
+    # 9 ^ 2 = 81
+    assert Rpn.peek(pid) == [81]
+  end
+
   test "wikipedia example" do
     {:ok, pid} = Rpn.start
     Rpn.push(pid, 5)
@@ -35,5 +49,34 @@ defmodule RpnTest do
     Rpn.push(pid, :-)
 
     assert Rpn.peek(pid) == [14]
+  end
+
+  @tag :capture_log
+  test "invalid operator" do
+    Process.flag(:trap_exit, true)
+    {:ok, pid} = Rpn.start
+
+    assert {{%UndefinedFunctionError{message: "operator xx/2 is not supported"}, _},
+            {GenServer, :call, [^pid, {:peek}, _]}} =
+      catch_exit((fn ->
+        Rpn.push(pid, 1)
+        Rpn.push(pid, 2)
+        Rpn.push(pid, :xx)
+        Rpn.peek(pid)
+      end).())
+  end
+
+  @tag :capture_log
+  test "wrong args" do
+    Process.flag(:trap_exit, true)
+    {:ok, pid} = Rpn.start
+
+    assert {{%UndefinedFunctionError{message: "operator */1 is not supported"}, _},
+            {GenServer, :call, [^pid, {:peek}, _]}} =
+      catch_exit((fn ->
+        Rpn.push(pid, 1)
+        Rpn.push(pid, :*)
+        Rpn.peek(pid)
+      end).())
   end
 end
